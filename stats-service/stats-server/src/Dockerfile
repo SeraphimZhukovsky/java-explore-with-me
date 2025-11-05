@@ -1,3 +1,5 @@
-FROM amazoncorretto:21-alpine-jdk
-COPY target/*.jar stats-server.jar
-ENTRYPOINT ["java","-jar","/stats-server.jar"]
+FROM eclipse-temurin:17-jre-jammy
+VOLUME /tmp
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
