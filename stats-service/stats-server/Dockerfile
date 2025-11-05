@@ -1,5 +1,5 @@
-FROM eclipse-temurin:17-jre-jammy
+FROM amazoncorretto:21-alpine
 VOLUME /tmp
 ARG JAR_FILE=target/*.jar
 COPY ${JAR_FILE} app.jar
-ENTRYPOINT ["java","-jar","/app.jar"]
+ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar /app.jar"]
