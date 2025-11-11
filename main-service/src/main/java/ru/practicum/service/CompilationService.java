@@ -38,8 +38,7 @@ public class CompilationService {
   }
 
   public CompilationDto getCompilation(Long compId) {
-    Compilation compilation = compilationRepository.findById(compId)
-            .orElseThrow(() -> new NotFoundException("Compilation not found"));
+    Compilation compilation = getCompilationById(compId);
     return compilationMapper.toCompilationDto(compilation);
   }
 
@@ -61,15 +60,14 @@ public class CompilationService {
   @Transactional
   public void deleteCompilation(Long compId) {
     if (!compilationRepository.existsById(compId)) {
-      throw new NotFoundException("Compilation not found");
+      throw new NotFoundException("Compilation with id=" + compId + " was not found");
     }
     compilationRepository.deleteById(compId);
   }
 
   @Transactional
   public CompilationDto updateCompilation(Long compId, UpdateCompilationRequest updateRequest) {
-    Compilation compilation = compilationRepository.findById(compId)
-            .orElseThrow(() -> new NotFoundException("Compilation not found"));
+    Compilation compilation = getCompilationById(compId);
 
     if (updateRequest.getEvents() != null) {
       List<Event> events = eventRepository.findByIdIn(updateRequest.getEvents());
@@ -86,5 +84,10 @@ public class CompilationService {
 
     compilation = compilationRepository.save(compilation);
     return compilationMapper.toCompilationDto(compilation);
+  }
+
+  private Compilation getCompilationById(Long compId) {
+    return compilationRepository.findById(compId)
+            .orElseThrow(() -> new NotFoundException("Compilation with id=" + compId + " was not found"));
   }
 }

@@ -46,9 +46,9 @@ public class RequestService {
   @Transactional
   public ParticipationRequestDto createRequest(Long userId, Long eventId) {
     User user = userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User not found"));
+            .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
     Event event = eventRepository.findById(eventId)
-            .orElseThrow(() -> new NotFoundException("Event not found"));
+            .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
     if (event.getInitiator().getId().equals(userId)) {
       throw new ConflictException("Event initiator cannot request participation in own event");
@@ -87,7 +87,7 @@ public class RequestService {
   public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
     checkUserExists(userId);
     ParticipationRequest request = requestRepository.findById(requestId)
-            .orElseThrow(() -> new NotFoundException("Request not found"));
+            .orElseThrow(() -> new NotFoundException("Request with id=" + requestId + " was not found"));
 
     if (!request.getRequester().getId().equals(userId)) {
       throw new ConflictException("Only request owner can cancel it");
@@ -107,8 +107,7 @@ public class RequestService {
 
   public List<ParticipationRequestDto> getEventRequests(Long userId, Long eventId) {
     checkUserExists(userId);
-    Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
-            .orElseThrow(() -> new NotFoundException("Event not found or user is not initiator"));
+    Event event = getEventByUserAndId(userId, eventId);
 
     return requestRepository.findByEventId(eventId)
             .stream()
@@ -120,8 +119,7 @@ public class RequestService {
   public EventRequestStatusUpdateResult updateRequestStatus(Long userId, Long eventId,
                                                             EventRequestStatusUpdateRequest updateRequest) {
     checkUserExists(userId);
-    Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
-            .orElseThrow(() -> new NotFoundException("Event not found or user is not initiator"));
+    Event event = getEventByUserAndId(userId, eventId);
 
     List<ParticipationRequest> requests = requestRepository.findByIdIn(updateRequest.getRequestIds());
 
@@ -198,5 +196,10 @@ public class RequestService {
     if (!userRepository.existsById(userId)) {
       throw new NotFoundException("User not found");
     }
+  }
+
+  private Event getEventByUserAndId(Long userId, Long eventId) {
+    return eventRepository.findByIdAndInitiatorId(eventId, userId)
+            .orElseThrow(() -> new NotFoundException("Event not found or user is not initiator"));
   }
 }

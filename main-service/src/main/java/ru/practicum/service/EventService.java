@@ -74,7 +74,7 @@ public class EventService {
 
   public EventFullDto getPublicEvent(Long id, HttpServletRequest request) {
     Event event = eventRepository.findByIdAndState(id, EventState.PUBLISHED)
-            .orElseThrow(() -> new NotFoundException("Event not found or not published"));
+            .orElseThrow(() -> new NotFoundException("Event with id=" + id + " was not found or not published"));
 
     saveHit(request);
 
@@ -99,8 +99,7 @@ public class EventService {
     validateEventDate(newEventDto.getEventDate(), 2);
 
     User user = userRepository.findById(userId).get();
-    Category category = categoryRepository.findById(newEventDto.getCategory())
-            .orElseThrow(() -> new NotFoundException("Category not found"));
+    Category category = getCategoryById(newEventDto.getCategory());
 
     Location location = createOrFindLocation(newEventDto.getLocation());
 
@@ -128,8 +127,7 @@ public class EventService {
 
   public EventFullDto getUserEvent(Long userId, Long eventId) {
     checkUserExists(userId);
-    Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
-            .orElseThrow(() -> new NotFoundException("Event not found"));
+    Event event = getEventByUserAndId(userId, eventId);
 
     return eventMapper.toEventFullDto(event);
   }
@@ -137,8 +135,7 @@ public class EventService {
   @Transactional
   public EventFullDto updateUserEvent(Long userId, Long eventId, UpdateEventUserRequest updateRequest) {
     checkUserExists(userId);
-    Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
-            .orElseThrow(() -> new NotFoundException("Event not found"));
+    Event event = getEventByUserAndId(userId, eventId);
 
     if (event.getState() == EventState.PUBLISHED) {
       throw new ConflictException("Cannot update published event");
@@ -190,7 +187,7 @@ public class EventService {
   @Transactional
   public EventFullDto updateAdminEvent(Long eventId, UpdateEventAdminRequest updateRequest) {
     Event event = eventRepository.findById(eventId)
-            .orElseThrow(() -> new NotFoundException("Event not found"));
+            .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
     updateEventFromAdminRequest(event, updateRequest);
     event = eventRepository.save(event);
@@ -394,8 +391,7 @@ public class EventService {
       event.setAnnotation(updateRequest.getAnnotation());
     }
     if (updateRequest.getCategory() != null) {
-      Category category = categoryRepository.findById(updateRequest.getCategory())
-              .orElseThrow(() -> new NotFoundException("Category not found"));
+      Category category = getCategoryById(updateRequest.getCategory());
       event.setCategory(category);
     }
     if (updateRequest.getDescription() != null) {
@@ -442,8 +438,7 @@ public class EventService {
       event.setAnnotation(updateRequest.getAnnotation());
     }
     if (updateRequest.getCategory() != null) {
-      Category category = categoryRepository.findById(updateRequest.getCategory())
-              .orElseThrow(() -> new NotFoundException("Category not found"));
+      Category category = getCategoryById(updateRequest.getCategory());
       event.setCategory(category);
     }
     if (updateRequest.getDescription() != null) {
@@ -486,5 +481,15 @@ public class EventService {
           break;
       }
     }
+  }
+
+  private Category getCategoryById(Long categoryId) {
+    return categoryRepository.findById(categoryId)
+            .orElseThrow(() -> new NotFoundException("Category with id=" + categoryId + " was not found"));
+  }
+
+  private Event getEventByUserAndId(Long userId, Long eventId) {
+    return eventRepository.findByIdAndInitiatorId(eventId, userId)
+            .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
   }
 }

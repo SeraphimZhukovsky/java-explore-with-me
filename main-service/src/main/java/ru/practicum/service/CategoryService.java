@@ -36,8 +36,7 @@ public class CategoryService {
   }
 
   public CategoryDto getCategory(Long catId) {
-    Category category = categoryRepository.findById(catId)
-            .orElseThrow(() -> new NotFoundException("Category not found"));
+    Category category = getCategoryById(catId);
     return categoryMapper.toCategoryDto(category);
   }
 
@@ -52,14 +51,14 @@ public class CategoryService {
       category = categoryRepository.save(category);
       return categoryMapper.toCategoryDto(category);
     } catch (DataIntegrityViolationException e) {
-      throw new ConflictException("Category with this name already exists");
+      throw new ConflictException("Category with name " + newCategoryDto.getName() + " already exists");
     }
   }
 
   @Transactional
   public void deleteCategory(Long catId) {
     if (!categoryRepository.existsById(catId)) {
-      throw new NotFoundException("Category not found");
+      throw new NotFoundException("Category with id=" + catId + " was not found");
     }
     try {
       categoryRepository.deleteById(catId);
@@ -70,8 +69,7 @@ public class CategoryService {
 
   @Transactional
   public CategoryDto updateCategory(Long catId, CategoryDto categoryDto) {
-    Category category = categoryRepository.findById(catId)
-            .orElseThrow(() -> new NotFoundException("Category not found"));
+    Category category = getCategoryById(catId);
 
     if (!category.getName().equals(categoryDto.getName()) &&
             categoryRepository.existsByName(categoryDto.getName())) {
@@ -81,5 +79,10 @@ public class CategoryService {
     category.setName(categoryDto.getName());
     category = categoryRepository.save(category);
     return categoryMapper.toCategoryDto(category);
+  }
+
+  private Category getCategoryById(Long catId) {
+    return categoryRepository.findById(catId)
+            .orElseThrow(() -> new NotFoundException("Category with id=" + catId + " was not found"));
   }
 }
